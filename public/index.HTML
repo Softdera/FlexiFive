@@ -4,22 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Management App</title>
-    <link rel="stylesheet" href="./global.css">
+    <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <h1>Book Management App</h1>
+    <div>
+        <h1>Book Management App</h1>
     
-    <div class="actions">
-        <input type="text" id="search-bar" placeholder="Search by title, author, or genre...">
-        <button id="search-title">Search</button>
-        <button id="calculate-price">Price of All Books</button>
-        <button id="display-transformed">Display Transformed Books</button>
+        <div class="actions">
+            <input type="text" id="search-bar" placeholder="Search by title, author, or genre...">
+            <button id="search-title">Search</button>
+            <button id="calculate-price">Price of All Books</button>
+            <button id="display-transformed">Display Transformed Books</button>
+        </div>
+        
+        <div class="book-list"></div>
+        
+        <p id="result"></p>
     </div>
-    
-    <div class="book-list"></div>
-    
-    <p id="result"></p>
-    <script src="./index.js"></script>
+   
+
+
+
+    <script src="index.js"></script>
 
 
 </body>

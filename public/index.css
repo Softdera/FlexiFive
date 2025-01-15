@@ -1,6 +1,6 @@
 body {
     font-family: Arial, sans-serif;
-    align-items: center;
+    text-align: center;
 }
 .book-list, .actions {
     margin: 20px 0;
