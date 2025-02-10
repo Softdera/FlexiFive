@@ -1,152 +1,122 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-// Virtual DOM Example
-const VirtualDOMExample = () => (
-  <div>
-    <h1>Virtual DOM</h1>
-    <p>The Virtual DOM allows React to efficiently update the UI by comparing changes in memory before applying them to the actual DOM.</p>
-  </div>
-);
+// Custom Hook for Fetching Data
+function useFetch(url) {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-// Product Component (Props Example)
-const Product = ({ product, addToCart }) => (
+  useEffect(() => {
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        setData(data);
+        setLoading(false);
+      })
+      .catch((error) => console.error('Error fetching data:', error));
+  }, [url]);
+
+  return { data, loading };
+}
+
+// Product Component
+const Product = ({ product, addToCart, updateProductPrice }) => (
   <div style={{ marginBottom: '10px' }}>
     <span>{product.name} - ${product.price}</span>
-    <button
-      onClick={() => addToCart(product)}
-      style={{ marginLeft: '10px', padding: '5px 10px' }}
-    >
-      Add to Cart
-    </button>
+    <button onClick={() => addToCart(product)} style={{ marginLeft: '10px' }}>Add to Cart</button>
+    <button onClick={() => updateProductPrice(product.id)} style={{ marginLeft: '10px' }}>Update Price</button>
   </div>
 );
 
-// CartItem Component
+// Shopping Cart Item
 const CartItem = ({ item, removeFromCart }) => (
   <div style={{ marginBottom: '10px' }}>
     <span>{item.name} - ${item.price}</span>
-    <button
-      onClick={() => removeFromCart(item.id)}
-      style={{ marginLeft: '10px', padding: '5px 10px' }}
-    >
-      Remove
-    </button>
+    <button onClick={() => removeFromCart(item.id)} style={{ marginLeft: '10px' }}>Remove</button>
   </div>
 );
 
-// Lifecycle Component Example
-class LifecycleExample extends React.Component {
-  state = { data: null };
-
-  componentDidMount() {
-    console.log('Component mounted!');
-    // Simulating data fetch
-    setTimeout(() => this.setState({ data: 'Hello, World!' }), 1000);
-  }
-
-  componentDidUpdate() {
-    console.log('Component updated!');
-  }
-
-  componentWillUnmount() {
-    console.log('Component will unmount!');
-  }
-
-  render() {
-    return <h1>{this.state.data || 'Loading...'}</h1>;
-  }
-}
-
-// Fragment Example
-const FragmentExample = () => (
-  <>
-    <h1>Fragment Example</h1>
-    <p>Fragments help avoid adding extra nodes to the DOM.</p>
-  </>
-);
-
-// Event Handlers Example
-const EventHandlerExample = () => {
-  const handleClick = () => alert('Button clicked!');
-
-  return (
-    <div>
-      <h1>Event Handlers Example</h1>
-      <button onClick={handleClick}>Click Me</button>
-    </div>
-  );
-};
-
-// Product List Component
+// Product List Component with Hooks
 const ProductList = () => {
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Product A', price: 50 },
-    { id: 2, name: 'Product B', price: 100 },
-    { id: 3, name: 'Product C', price: 150 },
-  ]);
-
+  const { data: products, loading } = useFetch('https://api.example.com/products');
   const [cart, setCart] = useState([]);
   const [search, setSearch] = useState('');
+  const searchInputRef = useRef(null);
 
-  // Add to Cart Function
+  useEffect(() => {
+    searchInputRef.current.focus();
+  }, []);
+
   const addToCart = (product) => {
-    setCart([...cart, product]);
+    fetch('https://api.example.com/cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(product),
+    })
+      .then((response) => response.json())
+      .then((data) => setCart([...cart, data]))
+      .catch((error) => console.error('Error adding to cart:', error));
   };
 
-  // Remove from Cart Function
   const removeFromCart = (id) => {
-    setCart(cart.filter((item) => item.id !== id));
+    fetch(`https://api.example.com/cart/${id}`, { method: 'DELETE' })
+      .then((response) => {
+        if (response.ok) setCart(cart.filter((item) => item.id !== id));
+      })
+      .catch((error) => console.error('Error removing from cart:', error));
   };
 
-  // Filter Products by Search
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const updateProductPrice = (id) => {
+    const productToUpdate = products.find((p) => p.id === id);
+    if (!productToUpdate) return;
+
+    const updatedProduct = { ...productToUpdate, price: productToUpdate.price + 10 };
+
+    fetch(`https://api.example.com/products/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedProduct),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setProducts(products.map((product) => (product.id === id ? { ...product, price: data.price } : product)));
+      })
+      .catch((error) => console.error('Error updating product:', error));
+  };
+
+  const filteredProducts = products.filter((product) => product.name.toLowerCase().includes(search.toLowerCase()));
+
+  if (loading) return <p>Loading products...</p>;
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
       <h1>Product List</h1>
-
-      {/* Search Bar */}
       <input
         type="text"
         placeholder="Search products..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
+        ref={searchInputRef}
         style={{ marginBottom: '20px', padding: '10px', width: '300px' }}
       />
-
-      {/* Product List */}
       <div>
         {filteredProducts.map((product) => (
-          <Product key={product.id} product={product} addToCart={addToCart} />
+          <Product key={product.id} product={product} addToCart={addToCart} updateProductPrice={updateProductPrice} />
         ))}
       </div>
-
-      {/* Cart */}
       <h2>Shopping Cart</h2>
       <div>
-        {cart.map((item) => (
-          <CartItem key={item.id} item={item} removeFromCart={removeFromCart} />
-        ))}
+        {cart.map((item) => <CartItem key={item.id} item={item} removeFromCart={removeFromCart} />)}
         {cart.length === 0 && <p>Your cart is empty.</p>}
       </div>
     </div>
   );
 };
 
-// Main Component to Render All Examples
-const App = () => {
-  return (
-    <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
-      <VirtualDOMExample />
-      <ProductList />
-      <LifecycleExample />
-      <FragmentExample />
-      <EventHandlerExample />
-    </div>
-  );
-};
+const App = () => (
+  <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
+    <ProductList />
+  </div>
+);
 
 export default App;
